@@ -14,7 +14,7 @@ A full-featured e-commerce platform for computers, laptops, and repair services.
 - 📦 **Orders**: Place orders with delivery address & payment selection
 - 🚚 **Tracking**: Live order status with step-by-step progress, ETA
 - 📱 **Responsive**: Works on mobile, tablet, and desktop
-- **Admin**: Admin panel for adding new products, updating order status and many more
+- **Admin**: Admin panel for adding new products, updating order status and many more products
 
 ## Quick Start
 
