@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}TechStore — Computers, Laptops & Service{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-orb orb1"></div>
+    <div class="hero-orb orb2"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🔥 New arrivals — M3 Max MacBooks in stock</div>
+    <h1 class="hero-title">The Future of<br><span class="gradient-text">Computing</span><br>Starts Here</h1>
+    <p class="hero-sub">Premium laptops, desktops, accessories, and expert repair services. Shop curated tech for professionals and enthusiasts.</p>
+    <div class="hero-actions">
+      <a href="/shop" class="btn-primary large">Browse Collection</a>
+      <a href="/shop?category=service" class="btn-ghost large">Repair Services</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><strong>500+</strong><span>Products</span></div>
+      <div class="stat"><strong>24h</strong><span>Fast Delivery</span></div>
+      <div class="stat"><strong>4.8★</strong><span>Avg Rating</span></div>
+      <div class="stat"><strong>10k+</strong><span>Happy Customers</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="floating-card card-main">
+      <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500" alt="MacBook Pro"/>
+    </div>
+    <div class="floating-card card-sm card-sm1">
+      <div class="mini-stat">
+        <div class="mini-icon">📦</div>
+        <div><strong>Order Shipped</strong><small>Est. delivery: 2 days</small></div>
+      </div>
+    </div>
+    <div class="floating-card card-sm card-sm2">
+      <div class="mini-stat">
+        <div class="mini-icon">⭐</div>
+        <div><strong>4.9 Rating</strong><small>342 reviews</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="categories-section">
+  <div class="container">
+    <h2 class="section-title">Shop by Category</h2>
+    <div class="category-grid">
+      <a href="/shop?category=laptop" class="cat-card">
+        <div class="cat-icon">💻</div>
+        <h3>Laptops</h3>
+        <p>MacBooks, XPS, ThinkPads & more</p>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a href="/shop?category=desktop" class="cat-card">
+        <div class="cat-icon">🖥️</div>
+        <h3>Desktops</h3>
+        <p>Workstations & custom builds</p>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a href="/shop?category=accessory" class="cat-card">
+        <div class="cat-icon">🖱️</div>
+        <h3>Accessories</h3>
+        <p>Monitors, keyboards & storage</p>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a href="/shop?category=service" class="cat-card">
+        <div class="cat-icon">🔧</div>
+        <h3>Services</h3>
+        <p>Repair, cleaning & recovery</p>
+        <span class="cat-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="featured-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Featured Products</h2>
+      <a href="/shop" class="see-all">See all →</a>
+    </div>
+    <div class="product-grid" id="featured-grid">
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust-section">
+  <div class="container">
+    <div class="trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon">🚀</div>
+        <h4>Express Delivery</h4>
+        <p>Next-day delivery available on most items</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🛡️</div>
+        <h4>2-Year Warranty</h4>
+        <p>All products covered by our guarantee</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">↩️</div>
+        <h4>30-Day Returns</h4>
+        <p>Hassle-free returns on everything</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">💬</div>
+        <h4>Expert Support</h4>
+        <p>Certified technicians available 24/7</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-brand">
+      <span class="brand-icon">⬡</span> TechStore
+    </div>
+    <p>Premium technology, expertly curated.</p>
+    <p class="footer-copy">© 2024 TechStore. All rights reserved.</p>
+  </div>
+</footer>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  // Load featured products
+  fetch('/api/products?sort=rating')
+    .then(r => r.json())
+    .then(products => {
+      const grid = document.getElementById('featured-grid');
+      grid.innerHTML = '';
+      products.slice(0, 4).forEach(p => {
+        grid.innerHTML += renderProductCard(p);
+      });
+    });
+</script>
+{% endblock %}

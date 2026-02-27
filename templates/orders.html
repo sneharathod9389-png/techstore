@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}My Orders — TechStore{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>My Orders</h1>
+    <a href="/shop" class="back-link">← Shop More</a>
+  </div>
+  <div id="orders-container">
+    <div class="loading-state">Loading orders...</div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  const STATUS_LABELS = {
+    confirmed: 'Order Confirmed', processing: 'Processing',
+    shipped: 'Shipped', out_for_delivery: 'Out for Delivery', delivered: 'Delivered'
+  };
+  const STATUS_COLORS = {
+    confirmed: '#6366f1', processing: '#f59e0b',
+    shipped: '#3b82f6', out_for_delivery: '#8b5cf6', delivered: '#10b981'
+  };
+
+  async function loadOrders() {
+    const res = await fetch('/api/orders');
+    const orders = await res.json();
+    const container = document.getElementById('orders-container');
+
+    if (!orders.length) {
+      container.innerHTML = `
+        <div class="empty-cart">
+          <div class="empty-icon">📦</div>
+          <h3>No orders yet</h3>
+          <p>Start shopping to see your orders here!</p>
+          <a href="/shop" class="btn-primary">Shop Now</a>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => {
+      const eta = o.estimated_delivery ? new Date(o.estimated_delivery) : null;
+      const etaStr = eta ? eta.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : 'N/A';
+      const isDelivered = o.status === 'delivered';
+      const color = STATUS_COLORS[o.status] || '#6366f1';
+      return `
+      <div class="order-card">
+        <div class="order-card-header">
+          <div>
+            <div class="order-id">Order #${o.id}</div>
+            <div class="order-date">${new Date(o.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'})}</div>
+          </div>
+          <div class="order-status-badge" style="background:${color}20;color:${color}">
+            ${STATUS_LABELS[o.status] || o.status}
+          </div>
+        </div>
+        
+        <div class="order-items-preview">
+          ${o.items.slice(0,3).map(item => `
+            <div class="order-item-row">
+              <img src="${item.image_url}" alt="${item.name}"/>
+              <div>
+                <div class="oi-name">${item.name}</div>
+                <div class="oi-meta">Qty: ${item.quantity} · $${item.price.toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+              </div>
+            </div>
+          `).join('')}
+          ${o.items.length > 3 ? `<div class="more-items">+${o.items.length - 3} more items</div>` : ''}
+        </div>
+
+        <div class="order-card-footer">
+          <div class="order-meta-grid">
+            <div><span>Total</span><strong>$${o.total.toLocaleString('en-US', {minimumFractionDigits:2})}</strong></div>
+            <div><span>Payment</span><strong>${o.payment_method}</strong></div>
+            <div><span>${isDelivered ? 'Delivered' : 'Est. Delivery'}</span><strong>${etaStr}</strong></div>
+            <div><span>Tracking</span><strong>${o.tracking_number}</strong></div>
+          </div>
+          <a href="/track/${o.id}" class="btn-primary">Track Order →</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  loadOrders();
+</script>
+{% endblock %}

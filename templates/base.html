@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}TechStore{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav class="navbar" id="navbar">
+    <a href="/" class="nav-brand">
+      <span class="brand-icon">⬡</span>
+      <span>TechStore</span>
+    </a>
+    <div class="nav-links">
+      <a href="/shop" class="nav-link">Shop</a>
+      <a href="/orders" class="nav-link" id="nav-orders" style="display:none">My Orders</a>
+    </div>
+    <div class="nav-actions">
+      <a href="/cart" class="cart-btn" id="nav-cart" style="display:none">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-count" id="nav-cart-count">0</span>
+      </a>
+      <div class="user-menu" id="user-menu" style="display:none">
+        <span class="user-greeting" id="user-greeting"></span>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+      </div>
+      <button class="btn-signin" id="btn-signin" onclick="openModal('login')">Sign In</button>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-tabs">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <form id="form-login" onsubmit="doLogin(event)">
+        <h2>Welcome back</h2>
+        <p class="form-sub">Sign in to your TechStore account</p>
+        <div class="demo-hint">🎯 Demo: demo@techstore.com / demo123</div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="you@example.com" required/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required/>
+        </div>
+        <div class="form-error" id="login-error"></div>
+        <button type="submit" class="btn-primary full-width">Sign In</button>
+      </form>
+
+      <form id="form-register" style="display:none" onsubmit="doRegister(event)">
+        <h2>Create account</h2>
+        <p class="form-sub">Join TechStore today</p>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="reg-name" placeholder="Your full name" required/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="you@example.com" required/>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="reg-phone" placeholder="+1 (555) 000-0000"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="Min 6 characters" required minlength="6"/>
+        </div>
+        <div class="form-error" id="reg-error"></div>
+        <button type="submit" class="btn-primary full-width">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

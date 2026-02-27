@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Track Order — TechStore{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Track Order</h1>
+    <a href="/orders" class="back-link">← My Orders</a>
+  </div>
+  <div id="tracking-container">
+    <div class="loading-state">Loading order details...</div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  const ORDER_ID = {{ order_id }};
+  const STEPS = [
+    { key: 'confirmed', label: 'Order Confirmed', icon: '✓', desc: 'Your order has been placed and confirmed.' },
+    { key: 'processing', label: 'Processing', icon: '⚙', desc: 'We are preparing your items for shipment.' },
+    { key: 'shipped', label: 'Shipped', icon: '📦', desc: 'Your order is on its way!' },
+    { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🚚', desc: 'Your package is out for delivery today.' },
+    { key: 'delivered', label: 'Delivered', icon: '🎉', desc: 'Package delivered successfully!' },
+  ];
+
+  async function loadTracking() {
+    const res = await fetch(`/api/orders/${ORDER_ID}`);
+    if (!res.ok) { document.getElementById('tracking-container').innerHTML = '<p>Order not found.</p>'; return; }
+    const order = await res.json();
+    renderTracking(order);
+  }
+
+  function renderTracking(o) {
+    const eta = o.estimated_delivery ? new Date(o.estimated_delivery) : null;
+    const now = new Date();
+    const daysLeft = eta ? Math.ceil((eta - now) / (1000*60*60*24)) : null;
+    const isDelivered = o.status === 'delivered';
+
+    const stepsHtml = STEPS.map((step, i) => {
+      const done = i <= o.current_step;
+      const current = i === o.current_step;
+      return `
+        <div class="track-step ${done ? 'done' : ''} ${current ? 'current' : ''}">
+          <div class="track-step-icon">${step.icon}</div>
+          <div class="track-step-line ${i < STEPS.length-1 ? (done && i < o.current_step ? 'filled' : '') : 'last'}"></div>
+          <div class="track-step-label">
+            <strong>${step.label}</strong>
+            <span>${step.desc}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('tracking-container').innerHTML = `
+      <div class="tracking-layout">
+        <div class="tracking-main">
+          <div class="tracking-hero ${isDelivered ? 'delivered' : ''}">
+            <div class="tracking-hero-icon">${isDelivered ? '🎉' : '🚚'}</div>
+            <div>
+              <h2>${isDelivered ? 'Delivered!' : (daysLeft !== null && daysLeft > 0 ? `Arriving in ${daysLeft} day${daysLeft>1?'s':''}` : (daysLeft === 0 ? 'Arriving today!' : 'Arriving soon'))}</h2>
+              <p>
+                ${isDelivered ? 'Your order has been delivered.' : 
+                  (eta ? `Estimated delivery: <strong>${eta.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}</strong>` : 'Calculating delivery...')}
+              </p>
+            </div>
+          </div>
+
+          <div class="tracking-steps">
+            ${stepsHtml}
+          </div>
+
+          <div class="tracking-info-grid">
+            <div class="info-box">
+              <div class="info-label">Order Number</div>
+              <div class="info-value">#${o.id}</div>
+            </div>
+            <div class="info-box">
+              <div class="info-label">Tracking Number</div>
+              <div class="info-value mono">${o.tracking_number}</div>
+            </div>
+            <div class="info-box">
+              <div class="info-label">Payment</div>
+              <div class="info-value">${o.payment_method}</div>
+            </div>
+            <div class="info-box">
+              <div class="info-label">Order Date</div>
+              <div class="info-value">${new Date(o.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</div>
+            </div>
+          </div>
+
+          <div class="delivery-address-box">
+            <div class="info-label">Delivery Address</div>
+            <div class="info-value">${o.address || 'No address provided'}</div>
+          </div>
+        </div>
+
+        <div class="tracking-sidebar">
+          <div class="order-items-card">
+            <h3>Items in this order</h3>
+            ${o.items.map(item => `
+              <div class="track-item">
+                <img src="${item.image_url}" alt="${item.name}"/>
+                <div>
+                  <div class="track-item-name">${item.name}</div>
+                  <div class="track-item-meta">${item.brand} · Qty: ${item.quantity}</div>
+                  <div class="track-item-price">$${(item.price * item.quantity).toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+                </div>
+              </div>
+            `).join('')}
+            <div class="order-total-row">
+              <span>Total</span>
+              <strong>$${o.total.toLocaleString('en-US', {minimumFractionDigits:2})}</strong>
+            </div>
+          </div>
+          <a href="/orders" class="btn-ghost full-width" style="margin-top:12px">← All Orders</a>
+          <a href="/shop" class="btn-primary full-width" style="margin-top:8px">Shop More</a>
+        </div>
+      </div>
+    `;
+  }
+
+  loadTracking();
+</script>
+{% endblock %}

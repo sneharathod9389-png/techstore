@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Cart — TechStore{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="page-header">
+    <h1>Shopping Cart</h1>
+    <a href="/shop" class="back-link">← Continue Shopping</a>
+  </div>
+
+  <div class="cart-layout">
+    <div class="cart-items-section">
+      <div id="cart-items-container">
+        <div class="loading-state">Loading cart...</div>
+      </div>
+    </div>
+    <div class="cart-summary-section">
+      <div class="summary-card">
+        <h3>Order Summary</h3>
+        <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
+        <div class="summary-row"><span>Shipping</span><span id="summary-shipping">Free</span></div>
+        <div class="summary-row"><span>Tax (8.5%)</span><span id="summary-tax">$0.00</span></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total"><strong>Total</strong><strong id="summary-total">$0.00</strong></div>
+        
+        <div class="checkout-address">
+          <label>Delivery Address</label>
+          <textarea id="checkout-address" placeholder="Enter your delivery address..." rows="3"></textarea>
+        </div>
+        <div class="checkout-payment">
+          <label>Payment Method</label>
+          <div class="payment-options">
+            <label class="payment-opt"><input type="radio" name="payment" value="Credit Card" checked/> 💳 Credit Card</label>
+            <label class="payment-opt"><input type="radio" name="payment" value="PayPal"/> 🅿️ PayPal</label>
+            <label class="payment-opt"><input type="radio" name="payment" value="Cash on Delivery"/> 💵 Cash on Delivery</label>
+          </div>
+        </div>
+        <button class="btn-primary full-width large" onclick="placeOrder()" id="checkout-btn" disabled>
+          Place Order
+        </button>
+        <p class="secure-note">🔒 Secure checkout — SSL encrypted</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  let cartData = [];
+
+  async function loadCart() {
+    const res = await fetch('/api/cart');
+    cartData = await res.json();
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById('cart-items-container');
+    const checkoutBtn = document.getElementById('checkout-btn');
+
+    if (cartData.length === 0) {
+      container.innerHTML = `
+        <div class="empty-cart">
+          <div class="empty-icon">🛒</div>
+          <h3>Your cart is empty</h3>
+          <p>Add some amazing tech to get started!</p>
+          <a href="/shop" class="btn-primary">Shop Now</a>
+        </div>`;
+      checkoutBtn.disabled = true;
+      updateSummary(0);
+      return;
+    }
+
+    checkoutBtn.disabled = false;
+    container.innerHTML = cartData.map(item => `
+      <div class="cart-item" id="cart-item-${item.id}">
+        <img src="${item.product.image_url}" alt="${item.product.name}" class="cart-item-img"/>
+        <div class="cart-item-info">
+          <div class="cart-item-brand">${item.product.brand}</div>
+          <div class="cart-item-name">${item.product.name}</div>
+          <div class="cart-item-cat">${item.product.category}</div>
+        </div>
+        <div class="cart-item-controls">
+          <div class="qty-selector">
+            <button onclick="updateQty(${item.id}, ${item.quantity - 1})">−</button>
+            <input type="number" value="${item.quantity}" min="1" max="${item.product.stock}" 
+              onchange="updateQty(${item.id}, this.value)"/>
+            <button onclick="updateQty(${item.id}, ${item.quantity + 1})">+</button>
+          </div>
+          <div class="cart-item-price">$${(item.product.price * item.quantity).toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+          <button class="remove-btn" onclick="removeItem(${item.id})">✕ Remove</button>
+        </div>
+      </div>
+    `).join('');
+
+    const subtotal = cartData.reduce((s, i) => s + i.product.price * i.quantity, 0);
+    updateSummary(subtotal);
+  }
+
+  function updateSummary(subtotal) {
+    const tax = subtotal * 0.085;
+    const total = subtotal + tax;
+    document.getElementById('summary-subtotal').textContent = '$' + subtotal.toLocaleString('en-US', {minimumFractionDigits:2});
+    document.getElementById('summary-tax').textContent = '$' + tax.toLocaleString('en-US', {minimumFractionDigits:2});
+    document.getElementById('summary-total').textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2});
+    document.getElementById('summary-shipping').textContent = subtotal > 500 ? 'Free' : '$19.99';
+  }
+
+  async function updateQty(itemId, qty) {
+    qty = parseInt(qty);
+    if (qty <= 0) { removeItem(itemId); return; }
+    await fetch(`/api/cart/${itemId}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({quantity: qty})
+    });
+    loadCart();
+    updateCartCount();
+  }
+
+  async function removeItem(itemId) {
+    await fetch(`/api/cart/${itemId}`, {method: 'DELETE'});
+    loadCart();
+    updateCartCount();
+  }
+
+  async function placeOrder() {
+    const address = document.getElementById('checkout-address').value.trim();
+    if (!address) { alert('Please enter your delivery address.'); return; }
+    const payment = document.querySelector('input[name="payment"]:checked').value;
+
+    const btn = document.getElementById('checkout-btn');
+    btn.textContent = 'Placing Order...';
+    btn.disabled = true;
+
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({address, payment_method: payment})
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = `/track/${data.order_id}`;
+    } else {
+      alert(data.error || 'Order failed. Please try again.');
+      btn.textContent = 'Place Order';
+      btn.disabled = false;
+    }
+  }
+
+  loadCart();
+</script>
+{% endblock %}

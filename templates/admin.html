@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — TechStore</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a0f; --bg2: #0d1117; --bg3: #161b24; --bg4: #1c2333;
+      --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+      --text: #e6edf3; --text2: #8b949e; --text3: #6e7681;
+      --accent: #00d4ff; --accent2: #7c3aed; --accent3: #10b981;
+      --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+    }
+    .sidebar-logo { padding: 24px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo .icon { color: var(--accent); font-size: 24px; }
+    .sidebar-logo span { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+    .sidebar-logo small { display: block; font-size: 11px; color: var(--text3); font-weight: 400; }
+    .sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.15s; border: none; background: transparent; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--bg3); color: var(--text); }
+    .nav-item.active { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.15); }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 16px; }
+    .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+    .logout-btn {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px;
+      background: transparent; border: 1px solid var(--border2); border-radius: 10px;
+      color: var(--text2); font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Main */
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 5; }
+    .topbar h2 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-badge { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); color: var(--accent); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .store-link { color: var(--text2); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .store-link:hover { color: var(--accent); }
+    .content { flex: 1; padding: 28px; }
+
+    /* Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s; }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-icon { font-size: 24px; margin-bottom: 4px; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .stat-card.green .stat-val { color: var(--accent3); }
+    .stat-card.blue .stat-val { color: var(--accent); }
+    .stat-card.purple .stat-val { color: var(--accent2); }
+    .stat-card.warning .stat-val { color: var(--warning); }
+
+    /* Tables */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .section-header h3 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+    .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg3); border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .product-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+    .cat-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cat-laptop { background: rgba(0,212,255,0.1); color: var(--accent); }
+    .cat-desktop { background: rgba(124,58,237,0.1); color: var(--accent2); }
+    .cat-accessory { background: rgba(16,185,129,0.1); color: var(--accent3); }
+    .cat-service { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .status-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .status-confirmed { background: rgba(99,102,241,0.15); color: #818cf8; }
+    .status-processing { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-shipped { background: rgba(59,130,246,0.15); color: var(--info); }
+    .status-out_for_delivery { background: rgba(124,58,237,0.15); color: #a78bfa; }
+    .status-delivered { background: rgba(16,185,129,0.15); color: var(--accent3); }
+    .action-btns { display: flex; gap: 8px; align-items: center; }
+    .btn-edit, .btn-del { padding: 5px 12px; border-radius: 7px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .btn-edit { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+    .btn-edit:hover { background: rgba(0,212,255,0.2); }
+    .btn-del { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+    .btn-del:hover { background: rgba(239,68,68,0.2); }
+
+    /* Buttons */
+    .btn-primary { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,255,0.3); }
+    .btn-ghost { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 18px; width: min(700px, 95vw); max-height: 90vh; overflow-y: auto; padding: 32px; position: relative; transform: scale(0.96); transition: transform 0.2s; }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal h3 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+    .modal-close { position: absolute; top: 16px; right: 16px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .modal-close:hover { color: var(--text); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .full { grid-column: 1/-1; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 9px;
+      padding: 10px 13px; color: var(--text); font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .specs-editor { background: var(--bg3); border: 1px solid var(--border2); border-radius: 9px; padding: 14px; }
+    .spec-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .spec-row input { flex: 1; background: var(--bg4); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--text); font-size: 13px; outline: none; }
+    .spec-row input:focus { border-color: var(--accent); }
+    .spec-del { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 0 4px; }
+    .add-spec-btn { background: transparent; border: 1px dashed var(--border2); color: var(--text3); padding: 7px 14px; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: inherit; transition: all 0.15s; width: 100%; margin-top: 4px; }
+    .add-spec-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+    /* Status Modal */
+    .status-select { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; outline: none; cursor: pointer; font-family: inherit; }
+    .status-steps-visual { display: flex; gap: 4px; margin-top: 16px; }
+    .step-dot { flex: 1; height: 6px; border-radius: 3px; background: var(--bg4); transition: all 0.3s; }
+    .step-dot.active { background: var(--accent3); }
+    .step-dot.current { background: var(--accent); }
+    .step-labels { display: flex; margin-top: 8px; }
+    .step-labels span { flex: 1; font-size: 10px; color: var(--text3); text-align: center; }
+
+    /* Search / Filter */
+    .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 200px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-select { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; color: var(--text); font-size: 13px; outline: none; cursor: pointer; font-family: inherit; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 14px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: toastIn 0.3s ease; max-width: 300px; }
+    .toast.success { border-color: rgba(16,185,129,0.5); color: var(--accent3); }
+    .toast.error { border-color: rgba(239,68,68,0.5); color: var(--danger); }
+    @keyframes toastIn { from { transform: translateY(16px); opacity: 0; } to { opacity: 1; transform: none; } }
+
+    .order-items-mini { display: flex; flex-direction: column; gap: 4px; }
+    .order-item-mini { font-size: 12px; color: var(--text2); }
+    .stock-badge { font-size: 12px; font-weight: 600; }
+    .stock-ok { color: var(--accent3); }
+    .stock-low { color: var(--warning); }
+    .stock-out { color: var(--danger); }
+    .empty-table { padding: 48px; text-align: center; color: var(--text3); }
+    .empty-table .e-icon { font-size: 36px; margin-bottom: 12px; }
+    .img-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 9px; margin-top: 8px; background: var(--bg4); }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span class="icon">⬡</span>
+    <div>
+      <span>TechStore</span>
+      <small>Admin Panel</small>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <button class="nav-item active" onclick="showSection('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+    </button>
+    <button class="nav-item" onclick="showSection('products')">
+      <span class="nav-icon">💻</span> Products
+    </button>
+    <button class="nav-item" onclick="showSection('orders')">
+      <span class="nav-icon">📦</span> Orders
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="doLogout()">
+      <span>🚪</span> Sign Out
+    </button>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-right">
+      <a href="/" class="store-link" target="_blank">🌐 View Store</a>
+      <span class="admin-badge">⚡ Admin</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Dashboard Section -->
+    <div class="section active" id="section-dashboard">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">💻</div><div class="stat-val" id="s-products">—</div><div class="stat-label">Products</div></div>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="s-orders">—</div><div class="stat-label">Total Orders</div></div>
+        <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-val" id="s-revenue">—</div><div class="stat-label">Revenue</div></div>
+        <div class="stat-card warning"><div class="stat-icon">⏳</div><div class="stat-val" id="s-pending">—</div><div class="stat-label">Pending Orders</div></div>
+        <div class="stat-card purple"><div class="stat-icon">👤</div><div class="stat-val" id="s-users">—</div><div class="stat-label">Customers</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-val" id="s-lowstock">—</div><div class="stat-label">Low Stock</div></div>
+      </div>
+
+      <h3 style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;margin-bottom:16px">Orders by Status</h3>
+      <div class="stats-grid" id="status-stats"></div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="section" id="section-products">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="product-search" placeholder="🔍 Search products..." oninput="filterProducts()"/>
+        <select class="filter-select" id="product-cat-filter" onchange="filterProducts()">
+          <option value="">All Categories</option>
+          <option value="laptop">Laptops</option>
+          <option value="desktop">Desktops</option>
+          <option value="accessory">Accessories</option>
+          <option value="service">Services</option>
+        </select>
+        <button class="btn-primary" onclick="openProductModal()">+ Add Product</button>
+      </div>
+      <div class="table-wrap">
+        <table id="products-table">
+          <thead>
+            <tr>
+              <th>Image</th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div class="section" id="section-orders">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="order-search" placeholder="🔍 Search by customer, tracking #..." oninput="filterOrders()"/>
+        <select class="filter-select" id="order-status-filter" onchange="filterOrders()">
+          <option value="">All Statuses</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="processing">Processing</option>
+          <option value="shipped">Shipped</option>
+          <option value="out_for_delivery">Out for Delivery</option>
+          <option value="delivered">Delivered</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table id="orders-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>ETA</th><th>Tracking</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <h3 id="product-modal-title">Add Product</h3>
+    <input type="hidden" id="edit-product-id"/>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Product Name</label>
+        <input type="text" id="f-name" placeholder="e.g. MacBook Pro 16" required/>
+      </div>
+      <div class="form-group">
+        <label>Brand</label>
+        <input type="text" id="f-brand" placeholder="Apple, Dell, HP..."/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="f-category">
+          <option value="laptop">Laptop</option>
+          <option value="desktop">Desktop</option>
+          <option value="accessory">Accessory</option>
+          <option value="service">Service</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price ($)</label>
+        <input type="number" id="f-price" step="0.01" min="0" placeholder="0.00"/>
+      </div>
+      <div class="form-group">
+        <label>Stock</label>
+        <input type="number" id="f-stock" min="0" placeholder="0"/>
+      </div>
+      <div class="form-group">
+        <label>Rating (0–5)</label>
+        <input type="number" id="f-rating" step="0.1" min="0" max="5" placeholder="4.5"/>
+      </div>
+      <div class="form-group">
+        <label>Review Count</label>
+        <input type="number" id="f-review-count" min="0" placeholder="0"/>
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <textarea id="f-description" placeholder="Product description..."></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Image URL</label>
+        <input type="url" id="f-image-url" placeholder="https://..." oninput="previewImage()"/>
+        <img id="img-preview" class="img-preview" style="display:none"/>
+      </div>
+      <div class="form-group full">
+        <label>Specifications</label>
+        <div class="specs-editor" id="specs-editor"></div>
+        <button type="button" class="add-spec-btn" onclick="addSpecRow()">+ Add Spec</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeProductModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Status Modal -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeStatusModal()">✕</button>
+    <h3>Update Order Status</h3>
+    <input type="hidden" id="status-order-id"/>
+    <div style="margin-bottom:16px">
+      <p style="color:var(--text2);font-size:14px;margin-bottom:12px">Select the new status for this order:</p>
+      <select class="status-select" id="status-select" onchange="updateStepViz()">
+        <option value="confirmed">✓ Order Confirmed</option>
+        <option value="processing">⚙ Processing</option>
+        <option value="shipped">📦 Shipped</option>
+        <option value="out_for_delivery">🚚 Out for Delivery</option>
+        <option value="delivered">🎉 Delivered</option>
+      </select>
+      <div class="status-steps-visual" id="step-viz" style="margin-top:16px">
+        <div class="step-dot" id="dot-0"></div>
+        <div class="step-dot" id="dot-1"></div>
+        <div class="step-dot" id="dot-2"></div>
+        <div class="step-dot" id="dot-3"></div>
+        <div class="step-dot" id="dot-4"></div>
+      </div>
+      <div class="step-labels">
+        <span>Confirmed</span><span>Processing</span><span>Shipped</span><span>Out for Del.</span><span>Delivered</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeStatusModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveStatus()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Data ─────────────────────────────────────────────────────
+  let allProducts = [];
+  let allOrders = [];
+  const STATUS_LABELS = {confirmed:'Confirmed',processing:'Processing',shipped:'Shipped',out_for_delivery:'Out for Delivery',delivered:'Delivered'};
+  const STEPS = ['confirmed','processing','shipped','out_for_delivery','delivered'];
+
+  // ── Navigation ───────────────────────────────────────────────
+  function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById(`section-${name}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+    const titles = {dashboard:'Dashboard', products:'Products', orders:'Orders'};
+    document.getElementById('page-title').textContent = titles[name];
+    if (name === 'products') loadProducts();
+    if (name === 'orders') loadOrders();
+    if (name === 'dashboard') loadStats();
+  }
+
+  // ── Stats ────────────────────────────────────────────────────
+  async function loadStats() {
+    const res = await fetch('/api/admin/stats');
+    const s = await res.json();
+    document.getElementById('s-products').textContent = s.total_products;
+    document.getElementById('s-orders').textContent = s.total_orders;
+    document.getElementById('s-revenue').textContent = '$' + s.total_revenue.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    document.getElementById('s-pending').textContent = s.pending_orders;
+    document.getElementById('s-users').textContent = s.total_users;
+    document.getElementById('s-lowstock').textContent = s.low_stock;
+    const colors = {confirmed:'#818cf8',processing:'#f59e0b',shipped:'#3b82f6',out_for_delivery:'#a78bfa',delivered:'#10b981'};
+    document.getElementById('status-stats').innerHTML = Object.entries(s.orders_by_status).map(([k,v]) => `
+      <div class="stat-card">
+        <div class="stat-val" style="color:${colors[k]}">${v}</div>
+        <div class="stat-label">${STATUS_LABELS[k]}</div>
+      </div>`).join('');
+  }
+
+  // ── Products ─────────────────────────────────────────────────
+  async function loadProducts() {
+    const res = await fetch('/api/admin/products');
+    allProducts = await res.json();
+    renderProducts(allProducts);
+  }
+
+  function filterProducts() {
+    const q = document.getElementById('product-search').value.toLowerCase();
+    const cat = document.getElementById('product-cat-filter').value;
+    const filtered = allProducts.filter(p =>
+      (!cat || p.category === cat) &&
+      (!q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))
+    );
+    renderProducts(filtered);
+  }
+
+  function renderProducts(products) {
+    const tbody = document.getElementById('products-tbody');
+    if (!products.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-table"><div class="e-icon">🔍</div>No products found</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = products.map(p => {
+      const stockClass = p.stock === 0 ? 'stock-out' : p.stock < 5 ? 'stock-low' : 'stock-ok';
+      return `
+        <tr>
+          <td><img src="${p.image_url}" class="product-thumb" onerror="this.src='https://via.placeholder.com/44'"/></td>
+          <td>
+            <div style="font-weight:600;font-size:14px">${p.name}</div>
+            <div style="font-size:12px;color:var(--text3)">${p.brand}</div>
+          </td>
+          <td><span class="cat-pill cat-${p.category}">${p.category}</span></td>
+          <td style="font-weight:600">$${p.price.toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+          <td><span class="stock-badge ${stockClass}">${p.category==='service'?'∞':p.stock+' units'}</span></td>
+          <td>⭐ ${p.rating} <span style="color:var(--text3);font-size:12px">(${p.review_count})</span></td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-edit" onclick="openProductModal(${p.id})">✏ Edit</button>
+              <button class="btn-del" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑 Del</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ── Product Modal ─────────────────────────────────────────────
+  function openProductModal(id = null) {
+    document.getElementById('product-modal-title').textContent = id ? 'Edit Product' : 'Add New Product';
+    document.getElementById('edit-product-id').value = id || '';
+    clearProductForm();
+    if (id) {
+      const p = allProducts.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('f-name').value = p.name;
+      document.getElementById('f-brand').value = p.brand;
+      document.getElementById('f-category').value = p.category;
+      document.getElementById('f-price').value = p.price;
+      document.getElementById('f-stock').value = p.stock;
+      document.getElementById('f-rating').value = p.rating;
+      document.getElementById('f-review-count').value = p.review_count;
+      document.getElementById('f-description').value = p.description;
+      document.getElementById('f-image-url').value = p.image_url;
+      previewImage();
+      const specs = p.specs || {};
+      Object.entries(specs).forEach(([k,v]) => addSpecRow(k, v));
+    } else {
+      addSpecRow(); addSpecRow(); addSpecRow();
+    }
+    document.getElementById('product-modal').classList.add('open');
+  }
+
+  function closeProductModal() {
+    document.getElementById('product-modal').classList.remove('open');
+  }
+
+  function clearProductForm() {
+    ['f-name','f-brand','f-price','f-stock','f-rating','f-review-count','f-description','f-image-url'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f-category').value = 'laptop';
+    document.getElementById('specs-editor').innerHTML = '';
+    document.getElementById('img-preview').style.display = 'none';
+  }
+
+  function previewImage() {
+    const url = document.getElementById('f-image-url').value;
+    const img = document.getElementById('img-preview');
+    if (url) { img.src = url; img.style.display = 'block'; img.onerror = () => img.style.display = 'none'; }
+    else img.style.display = 'none';
+  }
+
+  function addSpecRow(key = '', val = '') {
+    const editor = document.getElementById('specs-editor');
+    const row = document.createElement('div');
+    row.className = 'spec-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Key (e.g. CPU)" value="${key}" class="spec-key-input"/>
+      <input type="text" placeholder="Value (e.g. Apple M3 Max)" value="${val}" class="spec-val-input"/>
+      <button type="button" class="spec-del" onclick="this.parentElement.remove()">✕</button>`;
+    editor.appendChild(row);
+  }
+
+  function getSpecs() {
+    const specs = {};
+    document.querySelectorAll('.spec-row').forEach(row => {
+      const k = row.querySelector('.spec-key-input').value.trim();
+      const v = row.querySelector('.spec-val-input').value.trim();
+      if (k && v) specs[k] = v;
+    });
+    return specs;
+  }
+
+  async function saveProduct() {
+    const id = document.getElementById('edit-product-id').value;
+    const payload = {
+      name: document.getElementById('f-name').value.trim(),
+      brand: document.getElementById('f-brand').value.trim(),
+      category: document.getElementById('f-category').value,
+      price: parseFloat(document.getElementById('f-price').value) || 0,
+      stock: parseInt(document.getElementById('f-stock').value) || 0,
+      rating: parseFloat(document.getElementById('f-rating').value) || 4.5,
+      review_count: parseInt(document.getElementById('f-review-count').value) || 0,
+      description: document.getElementById('f-description').value.trim(),
+      image_url: document.getElementById('f-image-url').value.trim(),
+      specs: getSpecs()
+    };
+    if (!payload.name) { showToast('Product name is required', 'error'); return; }
+
+    const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) {
+      showToast(id ? '✓ Product updated!' : '✓ Product added!', 'success');
+      closeProductModal();
+      loadProducts();
+    } else {
+      showToast(data.error || 'Save failed', 'error');
+    }
+  }
+
+  async function deleteProduct(id, name) {
+    if (!confirm(`Delete "${name}"?\n\nThis will also remove it from all carts.`)) return;
+    const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('🗑 Product deleted', 'success');
+      loadProducts();
+    }
+  }
+
+  // ── Orders ────────────────────────────────────────────────────
+  async function loadOrders() {
+    const res = await fetch('/api/admin/orders');
+    allOrders = await res.json();
+    renderOrders(allOrders);
+  }
+
+  function filterOrders() {
+    const q = document.getElementById('order-search').value.toLowerCase();
+    const status = document.getElementById('order-status-filter').value;
+    const filtered = allOrders.filter(o =>
+      (!status || o.status === status) &&
+      (!q || o.user_name.toLowerCase().includes(q) || o.user_email.toLowerCase().includes(q) || (o.tracking_number||'').toLowerCase().includes(q) || String(o.id).includes(q))
+    );
+    renderOrders(filtered);
+  }
+
+  function renderOrders(orders) {
+    const tbody = document.getElementById('orders-tbody');
+    if (!orders.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-table"><div class="e-icon">📦</div>No orders found</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = orders.map(o => {
+      const eta = o.estimated_delivery ? new Date(o.estimated_delivery).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      const items = o.items.slice(0, 2).map(i => `<div class="order-item-mini">· ${i.name} ×${i.quantity}</div>`).join('');
+      const more = o.items.length > 2 ? `<div class="order-item-mini" style="color:var(--text3)">+${o.items.length-2} more</div>` : '';
+      return `
+        <tr>
+          <td style="font-weight:700;font-size:15px">#${o.id}</td>
+          <td>
+            <div style="font-weight:600;font-size:13px">${o.user_name}</div>
+            <div style="font-size:12px;color:var(--text3)">${o.user_email}</div>
+          </td>
+          <td><div class="order-items-mini">${items}${more}</div></td>
+          <td style="font-weight:700">$${o.total.toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+          <td>
+            <span class="status-pill status-${o.status}" onclick="openStatusModal(${o.id}, '${o.status}')" title="Click to update">
+              ${STATUS_LABELS[o.status]}
+            </span>
+          </td>
+          <td style="font-size:13px;color:var(--text2)">${eta}</td>
+          <td style="font-size:12px;font-family:monospace;color:var(--text3)">${o.tracking_number || '—'}</td>
+          <td>
+            <button class="btn-edit" onclick="openStatusModal(${o.id}, '${o.status}')">📋 Status</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ── Status Modal ──────────────────────────────────────────────
+  function openStatusModal(orderId, currentStatus) {
+    document.getElementById('status-order-id').value = orderId;
+    document.getElementById('status-select').value = currentStatus;
+    updateStepViz();
+    document.getElementById('status-modal').classList.add('open');
+  }
+
+  function closeStatusModal() {
+    document.getElementById('status-modal').classList.remove('open');
+  }
+
+  function updateStepViz() {
+    const val = document.getElementById('status-select').value;
+    const idx = STEPS.indexOf(val);
+    for (let i = 0; i < 5; i++) {
+      const dot = document.getElementById(`dot-${i}`);
+      dot.className = 'step-dot';
+      if (i < idx) dot.classList.add('active');
+      else if (i === idx) dot.classList.add('current');
+    }
+  }
+
+  async function saveStatus() {
+    const id = document.getElementById('status-order-id').value;
+    const status = document.getElementById('status-select').value;
+    const res = await fetch(`/api/admin/orders/${id}/status`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✓ Order #${id} → ${STATUS_LABELS[status]}`, 'success');
+      closeStatusModal();
+      loadOrders();
+    } else {
+      showToast(data.error || 'Update failed', 'error');
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────
+  async function doLogout() {
+    await fetch('/api/admin/logout', {method:'POST'});
+    window.location.href = '/admin';
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  loadStats();
+</script>
+</body>
+</html>

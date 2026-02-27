@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Shop — TechStore{% endblock %}
+{% block content %}
+
+<div class="shop-page">
+  <aside class="shop-sidebar">
+    <h3 class="sidebar-title">Filter</h3>
+
+    <div class="filter-group">
+      <label class="filter-label">Category</label>
+      <div class="filter-options" id="filter-category">
+        <button class="filter-chip active" data-value="all">All</button>
+        <button class="filter-chip" data-value="laptop">Laptops</button>
+        <button class="filter-chip" data-value="desktop">Desktops</button>
+        <button class="filter-chip" data-value="accessory">Accessories</button>
+        <button class="filter-chip" data-value="service">Services</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Price Range</label>
+      <div class="price-inputs">
+        <input type="number" id="price-min" placeholder="Min" class="price-input"/>
+        <span>–</span>
+        <input type="number" id="price-max" placeholder="Max" class="price-input"/>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Sort By</label>
+      <select id="sort-select" class="sort-select">
+        <option value="name">Name A–Z</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="rating">Best Rated</option>
+      </select>
+    </div>
+
+    <button class="btn-primary full-width" onclick="applyFilters()">Apply Filters</button>
+    <button class="btn-ghost full-width" style="margin-top:8px" onclick="clearFilters()">Clear</button>
+  </aside>
+
+  <main class="shop-main">
+    <div class="shop-header">
+      <div class="search-bar-wrap">
+        <input type="text" id="search-input" class="search-bar" placeholder="Search products, brands..." oninput="debounceSearch()"/>
+        <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </div>
+      <span id="result-count" class="result-count"></span>
+    </div>
+
+    <div class="product-grid" id="product-grid">
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+    </div>
+
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="empty-icon">🔍</div>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters or search terms</p>
+    </div>
+  </main>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="product-modal-overlay" onclick="closeProductModal()">
+  <div class="product-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <div id="product-modal-content"></div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  let currentCategory = 'all';
+  let searchTimeout = null;
+
+  // Read URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('category')) {
+    currentCategory = urlParams.get('category');
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === currentCategory);
+    });
+  }
+
+  // Category chips
+  document.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.value;
+      loadProducts();
+    });
+  });
+
+  function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(loadProducts, 350);
+  }
+
+  function applyFilters() { loadProducts(); }
+  function clearFilters() {
+    document.getElementById('price-min').value = '';
+    document.getElementById('price-max').value = '';
+    document.getElementById('sort-select').value = 'name';
+    document.getElementById('search-input').value = '';
+    currentCategory = 'all';
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.toggle('active', b.dataset.value === 'all'));
+    loadProducts();
+  }
+
+  function loadProducts() {
+    const search = document.getElementById('search-input').value;
+    const sort = document.getElementById('sort-select').value;
+    const minPrice = document.getElementById('price-min').value;
+    const maxPrice = document.getElementById('price-max').value;
+
+    let url = `/api/products?category=${currentCategory}&sort=${sort}&search=${encodeURIComponent(search)}`;
+    if (minPrice) url += `&min_price=${minPrice}`;
+    if (maxPrice) url += `&max_price=${maxPrice}`;
+
+    fetch(url).then(r => r.json()).then(products => {
+      const grid = document.getElementById('product-grid');
+      const empty = document.getElementById('empty-state');
+      const count = document.getElementById('result-count');
+      
+      count.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+      
+      if (products.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'flex';
+        return;
+      }
+      empty.style.display = 'none';
+      grid.innerHTML = products.map(p => renderProductCard(p, true)).join('');
+    });
+  }
+
+  function openProductModal(id) {
+    fetch(`/api/products/${id}`).then(r => r.json()).then(p => {
+      const specs = p.specs || {};
+      document.getElementById('product-modal-content').innerHTML = `
+        <div class="product-modal-inner">
+          <div class="product-modal-img">
+            <img src="${p.image_url}" alt="${p.name}"/>
+            <span class="cat-badge-lg">${p.category}</span>
+          </div>
+          <div class="product-modal-info">
+            <div class="product-brand-sm">${p.brand}</div>
+            <h2 class="product-modal-name">${p.name}</h2>
+            <div class="product-rating-row">
+              ${'★'.repeat(Math.round(p.rating))}${'☆'.repeat(5-Math.round(p.rating))}
+              <span>${p.rating} (${p.review_count} reviews)</span>
+            </div>
+            <div class="product-modal-price">$${p.price.toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+            <p class="product-modal-desc">${p.description}</p>
+            <div class="specs-grid">
+              ${Object.entries(specs).map(([k,v]) => `<div class="spec-item"><span class="spec-key">${k}</span><span class="spec-val">${v}</span></div>`).join('')}
+            </div>
+            <div class="stock-info ${p.stock < 5 ? 'low-stock' : ''}">
+              ${p.stock > 0 ? `✓ In Stock${p.stock < 5 ? ` — Only ${p.stock} left!` : ''}` : '✗ Out of Stock'}
+            </div>
+            <div class="modal-actions">
+              <div class="qty-selector">
+                <button onclick="this.nextElementSibling.value=Math.max(1,parseInt(this.nextElementSibling.value)-1)">−</button>
+                <input type="number" value="1" min="1" max="${p.stock}" id="modal-qty"/>
+                <button onclick="this.previousElementSibling.value=Math.min(${p.stock},parseInt(this.previousElementSibling.value)+1)">+</button>
+              </div>
+              <button class="btn-primary" style="flex:1" onclick="addToCartFromModal(${p.id})" ${p.stock===0?'disabled':''}>
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('product-modal-overlay').classList.add('active');
+    });
+  }
+
+  function closeProductModal() {
+    document.getElementById('product-modal-overlay').classList.remove('active');
+  }
+
+  async function addToCartFromModal(productId) {
+    const qty = parseInt(document.getElementById('modal-qty').value);
+    const ok = await addToCart(productId, qty);
+    if (ok) closeProductModal();
+  }
+
+  loadProducts();
+</script>
+{% endblock %}

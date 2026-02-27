@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login — TechStore</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a0f; --bg2: #0d1117; --bg3: #161b24; --bg4: #1c2333;
+      --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+      --text: #e6edf3; --text2: #8b949e; --text3: #6e7681;
+      --accent: #00d4ff; --accent2: #7c3aed; --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-wrap { width: min(420px, 95vw); }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo-icon { font-size: 40px; }
+    .logo h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-top: 8px; }
+    .logo p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+    .card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 36px; }
+    .card h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .card p { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+    .hint { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--accent); padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .form-group input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px; outline: none; transition: all 0.2s; font-family: inherit; }
+    .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+    .btn { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-top: 8px; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,212,255,0.3); }
+    .error { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 18px; }
+    .back-link { display: block; text-align: center; margin-top: 20px; color: var(--text2); font-size: 13px; }
+    .back-link a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <h1>TechStore Admin</h1>
+      <p>Management Dashboard</p>
+    </div>
+    <div class="card">
+      <h2>Admin Sign In</h2>
+      <p>Access the store management panel</p>
+      <div class="hint">🔑 Username: admin &nbsp;|&nbsp; Password: admin123</div>
+      <form onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="admin" required autocomplete="username"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password"/>
+        </div>
+        <div class="error" id="error"></div>
+        <button type="submit" class="btn">Sign In to Dashboard</button>
+      </form>
+    </div>
+    <div class="back-link">← Back to <a href="/">Store</a></div>
+  </div>
+  <script>
+    async function doLogin(e) {
+      e.preventDefault();
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
+      });
+      const d = await res.json();
+      if (d.success) window.location.href = '/admin';
+      else document.getElementById('error').textContent = d.error || 'Login failed';
+    }
+  </script>
+</body>
+</html>
